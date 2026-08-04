@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marina Korsak — Playable Ads Developer</title>
+<meta name="description" content="Interactive HTML5 playable ads, concept to network-ready build.">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     РЕДАКТИРУЕШЬ ТОЛЬКО ЭТИ ДВА БЛОКА.
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+var PROFILE = {
+  name:     "Marina Korsak",
+  role:     "Playable Ads Developer",
+  tagline:  "HTML5 · JavaScript · Canvas",
+  email:    "marinakorsak7@gmail.com",
+  linkedin: "https://www.linkedin.com/in/marina-korsak-990b36212/",
+  location: "Gdańsk, Poland · remote worldwide",
+};
+
+// folder = имя папки в репо (без пробелов!). Внутри — index.html.
+// Если файл называется иначе, укажи путь целиком: folder: "play-2d-1/game.html".
+// orientation: "portrait" или "landscape" — форма телефона под плейбл.
+var PLAYABLES = [
+  { folder: "play-2d-1", title: "Project 2D · 1", tag: "2D", orientation: "portrait" },
+  { folder: "play-2d-2", title: "Project 2D · 2", tag: "2D", orientation: "portrait" },
+  { folder: "play-2d-3", title: "Project 2D · 3", tag: "2D", orientation: "portrait" },
+  { folder: "play-3d-1", title: "Project 3D · 1", tag: "3D", orientation: "portrait" },
+  { folder: "play-3d-2", title: "Project 3D · 2", tag: "3D", orientation: "portrait" },
+  { folder: "play-3d-3", title: "Project 3D · 3", tag: "3D", orientation: "portrait" },
+];
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a12; --panel:#15121f; --ink:#f5f3fb; --muted:#a79fc7; --dim:#6b6390; --line:#2a2340;
+    --violet:#7c3aed; --pink:#ec4899; --amber:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  html{overflow-x:hidden}
+  body{margin:0;min-height:100dvh;overflow-x:hidden;background:var(--bg);color:var(--ink);
+    font-family:Inter,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+
+  .glow{position:fixed;inset:-15% -10%;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(38% 38% at 26% 28%, rgba(124,58,237,.55), transparent 70%),
+      radial-gradient(38% 38% at 76% 22%, rgba(236,72,153,.48), transparent 70%),
+      radial-gradient(42% 42% at 50% 82%, rgba(245,158,11,.36), transparent 70%);
+    filter:blur(70px)}
+
+  main,.cta,footer{position:relative;z-index:1}
+
+  main{display:flex;flex-direction:column;align-items:center;gap:24px;
+    padding:clamp(36px,7vw,64px) clamp(10px,4vw,32px) clamp(18px,4vw,32px)}
+
+  .stage{position:relative;width:100%;max-width:920px;height:min(74dvh,660px)}
+
+  .arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:20;
+    width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
+    background:rgba(21,18,31,.65);backdrop-filter:blur(6px);
+    color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:.15s}
+  .arrow:hover{border-color:var(--pink);color:var(--pink)}
+  .arrow svg{width:18px;height:18px}
+  .arrow.prev{left:clamp(0px,1vw,18px)}
+  .arrow.next{right:clamp(0px,1vw,18px)}
+
+  .slide{position:absolute;top:50%;left:50%;cursor:pointer;
+    transition:transform .5s cubic-bezier(.22,.9,.32,1),opacity .5s ease,filter .5s ease}
+
+  .phone{position:relative;background:#08070d;border-radius:38px;padding:10px;
+    box-shadow:inset 0 0 0 2px #3a3358,0 30px 70px -20px rgba(0,0,0,.85)}
+  .phone.portrait{height:min(74dvh,660px);aspect-ratio:9/19.5}
+  .phone.landscape{width:min(88vw,760px);aspect-ratio:19.5/9}
+
+  @media(max-width:480px){
+    .phone.portrait{height:min(58dvh,520px)}
+    .arrow{width:36px;height:36px}
+    .arrow svg{width:16px;height:16px}
+  }
+  .screen{position:relative;width:100%;height:100%;border-radius:25px;overflow:hidden;background:#000}
+  .phone.landscape .screen{border-radius:20px}
+  .screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+
+  .poster{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;background:linear-gradient(160deg,#241f38,#0f0e15)}
+  .poster .play{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--violet),var(--pink));color:#fff;
+    box-shadow:0 10px 26px -8px rgba(236,72,153,.6);transition:.18s}
+  .slide.current .poster:hover .play{transform:scale(1.08)}
+  .poster .play svg{width:22px;height:22px;margin-left:3px}
+
+  .expand{position:absolute;top:20px;right:20px;z-index:4;width:28px;height:28px;border-radius:8px;
+    display:grid;place-items:center;background:rgba(8,7,13,.72);color:#fff;border:1px solid rgba(255,255,255,.14);cursor:pointer}
+  .expand:hover{background:var(--pink);color:#fff}
+  .expand svg{width:14px;height:14px}
+
+  .dots{display:flex;gap:8px}
+  .dots button{width:7px;height:7px;border-radius:50%;border:0;padding:0;background:var(--line);cursor:pointer;transition:.15s}
+  .dots button.on{background:linear-gradient(90deg,var(--violet),var(--pink));width:20px;border-radius:4px}
+
+  .cta{text-align:center;padding:clamp(24px,6vw,52px) clamp(20px,6vw,40px) clamp(6px,2vw,14px);
+    max-width:620px;margin:0 auto}
+  .cta h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,4vw,38px);
+    line-height:1.1;letter-spacing:-.02em;margin:0}
+  .cta h2 em{font-style:normal;background:linear-gradient(90deg,var(--pink),var(--amber));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .cta p{color:var(--muted);font-size:15px;margin:14px 0 0}
+  .cta-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:11px;
+    font:600 14px Inter,sans-serif;cursor:pointer;transition:.16s;border:1px solid transparent}
+  .btn-primary{background:linear-gradient(90deg,var(--violet),var(--pink));color:#fff}
+  .btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .btn-ghost{border-color:var(--line);color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--pink);color:var(--pink)}
+  .cta-meta{margin-top:20px;font:500 12px 'JetBrains Mono',monospace;color:var(--dim);letter-spacing:.06em}
+
+  footer{padding:clamp(14px,2vw,20px);text-align:center;font:500 11px 'JetBrains Mono',monospace;
+    letter-spacing:.06em;color:var(--dim)}
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<main>
+  <div class="stage" id="stage">
+    <button class="arrow prev" id="prev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="arrow next" id="next" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+  <div class="dots" id="dots"></div>
+</main>
+
+<section class="cta">
+  <h2>Got a game? Let's make it <em>play</em>.</h2>
+  <p>Let's build it together — from concept to a network-ready build, fast.</p>
+  <div class="cta-actions">
+    <a class="btn btn-primary" id="emailBtn">Let's talk →</a>
+    <a class="btn btn-ghost" id="liBtn" target="_blank" rel="noopener">LinkedIn ↗</a>
+  </div>
+  <div class="cta-meta" id="ctaMeta"></div>
+</section>
+
+<footer>
+  <span id="footLine"></span>
+</footer>
+
+<script>
+(function(){
+  var P = window.PROFILE || {};
+  var items = (window.PLAYABLES || []).filter(function(p){ return p && p.folder; });
+  var path = function(f){ f=f.replace(/\/+$/,''); return /\.html?$/i.test(f) ? f : f + '/'; };
+  var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  var EXPAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+
+  document.title = (P.name||'Portfolio') + ' — ' + (P.role||'');
+  var email = P.email||'', li = P.linkedin||'';
+  document.getElementById('emailBtn').href = email ? 'mailto:'+email+'?subject=Playable%20ad%20inquiry' : '#';
+  document.getElementById('liBtn').href = li || '#';
+  document.getElementById('ctaMeta').textContent = email;
+  document.getElementById('footLine').textContent = '© ' + new Date().getFullYear() + ' ' + (P.name||'');
+
+  var stage = document.getElementById('stage');
+  var prevBtn = document.getElementById('prev'), nextBtn = document.getElementById('next');
+  var dotsEl = document.getElementById('dots');
+  var idx = 0, slideEls = [], resetFns = [];
+
+  if(!items.length){
+    prevBtn.hidden = nextBtn.hidden = true;
+    var empty = document.createElement('div');
+    empty.style.cssText = 'position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font:13px monospace';
+    empty.textContent = 'Add playables to the PLAYABLES array.';
+    stage.appendChild(empty);
+  } else {
+    items.forEach(function(pl, i){
+      var ori = pl.orientation || 'portrait', src = path(pl.folder), loaded = false;
+      var slide = document.createElement('div'); slide.className = 'slide';
+      var phone = document.createElement('div'); phone.className = 'phone ' + ori;
+      var screen = document.createElement('div'); screen.className = 'screen';
+      var poster = document.createElement('div'); poster.className = 'poster';
+      poster.innerHTML = '<div class="play">'+PLAY+'</div>';
+      var frame = null, exp = null;
+      poster.onclick = function(){
+        if(i !== idx){ idx = i; layout(); return; }
+        if(loaded) return; loaded = true;
+        frame = document.createElement('iframe');
+        frame.setAttribute('allow','autoplay; fullscreen'); frame.src = src;
+        screen.appendChild(frame); poster.style.display = 'none';
+        exp = document.createElement('button'); exp.className = 'expand'; exp.title = 'Fullscreen'; exp.innerHTML = EXPAND;
+        exp.onclick = function(ev){ ev.stopPropagation(); (screen.requestFullscreen || screen.webkitRequestFullscreen).call(screen); };
+        phone.appendChild(exp);
+      };
+      screen.appendChild(poster);
+      phone.appendChild(screen);
+      slide.appendChild(phone);
+      stage.appendChild(slide);
+      slideEls.push(slide);
+      resetFns.push(function(){
+        if(!loaded) return; loaded = false;
+        if(frame){ frame.remove(); frame = null; }
+        if(exp){ exp.remove(); exp = null; }
+        poster.style.display = '';
+      });
+    });
+
+    items.forEach(function(_, i){
+      var d = document.createElement('button');
+      d.onclick = function(){ idx = i; layout(); };
+      dotsEl.appendChild(d);
+    });
+
+    prevBtn.onclick = function(){ idx = (idx - 1 + items.length) % items.length; layout(); };
+    nextBtn.onclick = function(){ idx = (idx + 1) % items.length; layout(); };
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'ArrowLeft') prevBtn.click();
+      if(e.key === 'ArrowRight') nextBtn.click();
+    });
+
+    var touchX = null;
+    stage.addEventListener('touchstart', function(e){ touchX = e.touches[0].clientX; });
+    stage.addEventListener('touchend', function(e){
+      if(touchX === null) return;
+      var dx = e.changedTouches[0].clientX - touchX;
+      if(Math.abs(dx) > 40) (dx < 0 ? nextBtn : prevBtn).click();
+      touchX = null;
+    });
+
+    layout();
+  }
+
+  function layout(){
+    var n = items.length;
+    slideEls.forEach(function(el, i){
+      var raw = i - idx;
+      if(raw > n/2) raw -= n;
+      if(raw < -n/2) raw += n;
+      var absD = Math.abs(raw), clamped = Math.max(-2, Math.min(2, raw));
+      var scale = absD === 0 ? 1 : absD === 1 ? .72 : .5;
+      var opacity = absD === 0 ? 1 : absD === 1 ? .38 : 0;
+      el.style.transform = 'translate(-50%,-50%) translateX('+(clamped*64)+'%) scale('+scale+')';
+      el.style.opacity = opacity;
+      el.style.zIndex = 10 - absD;
+      el.style.pointerEvents = absD <= 1 ? 'auto' : 'none';
+      el.style.filter = absD === 0 ? 'none' : 'saturate(.6)';
+      el.classList.toggle('current', absD === 0);
+      if(absD !== 0) resetFns[i]();
+    });
+    Array.from(dotsEl.children).forEach(function(d, i){ d.className = i === idx ? 'on' : ''; });
+  }
+})();
+</script>
+</body>
+</html>
